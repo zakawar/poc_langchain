@@ -22,8 +22,7 @@ class ExecuteCommand(BaseTool):
         cmd = command.split()
         if cmd[0]=='sudo':
             cmd.insert(1,'-S')
-        print(cmd)
-        """"
+        #print(cmd)        
         p = Popen(cmd ,stdin = PIPE, stdout = PIPE, universal_newlines = True)
         p.stdin.write('test1!')
         res,_ = p.communicate()
@@ -31,8 +30,8 @@ class ExecuteCommand(BaseTool):
         p.terminate()
 
         return res
-        """
-        return json.dumps(cmd)       
+        
+        #return json.dumps(cmd)       
 
     def _arun(self, webpage: str):
         raise NotImplementedError("This tool does not support async")
@@ -72,7 +71,7 @@ def main():
             early_stopping_method='generate',
             memory=memory
         )
-    conversational_agent("Give a command to run the updating apt.")
+    conversational_agent("Give a command to update apt.")
 
 if __name__ == "__main__":
     main()
