@@ -141,9 +141,23 @@ def main():
     load_dotenv()
     execute_command = ExecuteCommand()
 
+    askvector_db = AskvectorDB()
+    TransfromtoBash = Transfrom_to_Bash()
+
     search = DuckDuckGoSearchRun()
+
     llm = OpenAI(temperature=0, api_key=os.getenv('OPEN_API_KEY'))
     tools = [
+        Tool(
+            name ="askvector_db", 
+            func = askvector_db._run,
+            description = "ask the vector db"
+        ),   
+        Tool(
+            name ="TransfromtoBash", 
+            func = TransfromtoBash._run,
+            description = "translate the text to bash command to be executed in the VM"
+        ),
         Tool(
             name="search",
             func = search.run,
@@ -209,7 +223,7 @@ def main():
                                                     tools=tools,
                                                     verbose=True,
                                                    )
-    result = agent_executor.invoke({'input':"Check if notepad++ editor is in this machine.", 'history': memory})
+    result = agent_executor.invoke({'input':"How to create a user called 'lolo'", 'history': memory})
 
 
     """
