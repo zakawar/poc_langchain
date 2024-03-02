@@ -28,6 +28,7 @@ class CustomPromptTemplate(StringPromptTemplate):
         thoughts = ""
         for action, observation in intermediate_steps:
             thoughts += action.log
+            # print('observation :', observation)
             thoughts += f"\nObservation: {observation}\nThought: "
         # Set the agent_scratchpad variable to that value
         kwargs["agent_scratchpad"] = thoughts
@@ -38,8 +39,9 @@ class CustomPromptTemplate(StringPromptTemplate):
         return self.template.format(**kwargs)
 
 class CustomOutputParser(AgentOutputParser):
-
     def parse(self, llm_output: str) -> Union[AgentAction, AgentFinish]:
+
+        # print('llm_output :',llm_output)
         # Check if agent should finish
         if "Final Answer:" in llm_output:
             return AgentFinish(
@@ -48,16 +50,23 @@ class CustomOutputParser(AgentOutputParser):
                 return_values={"output": llm_output.split("Final Answer:")[-1].strip()},
                 log=llm_output,
             )
-        # Parse out the action and action input
-        regex = r"Action\s*\d*\s*:(.*?)\nAction\s*\d*\s*Input\s*\d*\s*:[\s]*(.*)"
-        match = re.search(regex, llm_output, re.DOTALL)
-        if not match:
-            raise ValueError(f"Could not parse LLM output: `{llm_output}`")
-        action = match.group(1).strip()
-        action_input = match.group(2)
-        # Return the action and action input
-        return AgentAction(tool=action, tool_input=action_input.strip(" ").strip('"'), log=llm_output)
-
+        elif "No action" in llm_output:       
+            return AgentFinish(
+                # Return values is generally always a dictionary with a single `output` key
+                # It is not recommended to try anything else at the moment :)
+                return_values={"output": llm_output.split("Thought:").split(".")[0].strip()},
+                log=llm_output,
+            )        
+        else:
+            # Parse out the action and action input
+            regex = r"Action\s*\d*\s*:(.*?)\nAction\s*\d*\s*Input\s*\d*\s*:[\s]*(.*)"
+            match = re.search(regex, llm_output, re.DOTALL)
+            if not match:                
+                raise ValueError(f"Could not parse LLM output: `{llm_output}`")
+            action = match.group(1).strip()
+            action_input = match.group(2)
+            # Return the action and action input
+            return AgentAction(tool=action, tool_input=action_input.strip(" ").strip('"').strip("'"), log=llm_output)
 def run(agent, tools, request,memory, verbose=True):
     agent_executor = AgentExecutor.from_agent_and_tools(agent=agent,
                                                     tools=tools,
@@ -76,7 +85,7 @@ class ExecuteCommand(BaseTool):
             cmd.insert(1,'-S')
         #print(cmd)
         
-        p = Popen(cmd ,stdin = PIPE, stdout = PIPE, universal_newlines = True)
+        p = Popen(cmd, stdin = PIPE, stdout = PIPE, universal_newlines = True)
         p.stdin.write('test1!')
         res,_ = p.communicate()
     
@@ -112,7 +121,8 @@ def main():
         )
     ]    
 
-    template = """ Answer the following questions as best you can, but speaking as cyber security agent. 
+    template = """ Answer the following questions as best you can, but speaking as cyber security agent.
+    You have a VM at your disposal.
     You have access to the following tools:
 
             {tools}
@@ -158,13 +168,15 @@ def main():
         stop=["\nObservation:"],
         allowed_tools=tool_names
     )
-    memory=ConversationBufferWindowMemory(k=2)
-    """
+    memory=ConversationBufferWindowMemory(k=5)
+    
     agent_executor = AgentExecutor.from_agent_and_tools(agent=agent,
                                                     tools=tools,
                                                     verbose=True,
                                                    )
-    result = agent_executor.invoke("How can I create user in a linux machine?") 
+    result = agent_executor.invoke({'input':"Check if notepad++ editor is in this machine.", 'history': memory})
+
+
     """
     a = 0
     while a <= 3:
@@ -173,8 +185,9 @@ def main():
         result = run(agent,tools,request, memory)
         a += 1
         print(result["output"])
+    """
 
-        
+    print('output :',result["output"])       
     
 
 

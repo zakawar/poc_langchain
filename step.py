@@ -4,11 +4,13 @@ from langchain_openai import ChatOpenAI #This class represents an instance of th
 from langchain.prompts.chat import SystemMessagePromptTemplate,HumanMessagePromptTemplate # This imports two classes from prompt module
 from langchain.schema import AIMessage, HumanMessage, SystemMessage, BaseMessage
 from subprocess import Popen, PIPE
+from dotenv import load_dotenv
 
 import os
 import time
 
-#os.environ["OPENAI_API_KEY"] = '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' #PUT your API Key
+load_dotenv()
+os.environ["OPENAI_API_KEY"] = os.getenv('OPEN_API_KEY') #PUT your API Key
 
 assistant = input('Enter the Assistant Role Name !: ')
 
